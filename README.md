@@ -1,4 +1,5 @@
 # Spironolactone
+# Origal repo https://github.com/Orangera1n/spironolactone
 This is a tool meant for booting dualboots, ssh ramdisks, and tether downgrades for now. Currently, it only supports generating ssh ramdisks and booting them.
 
 Expansion in functionality (i.e. installing dualboots, jailbreaks, downgrades, etc) willl come at a later date. 
@@ -9,10 +10,11 @@ I will annunce updates over at https://x.com/_orangera1n and on the afformention
 
 # Important information
 1. This tool is in VERY early stages of development, meaning that various functionailites might not be implemented or are otherwise buggy.
-2. Only iOS 12.0-14.4.2 are supported for now due to iBoot patch issues for A12, and iOS 13.0-13.7 are supported for A13.
+2. By using this tool, you will almost certainly wiping the device, back up any data beforehand.
+3. Only iOS 12.0-14.4.2 are supported for now due to iBoot patch issues for A12, and iOS 13.0-13.7 are supported for A13.
 Do *not* ask for an ETA for new features or version support
 # Prerequsites
-1. A computer running macOS (Linux is not implemented yet, but is likely easy to implement, Windows is *very* unlikely to happen)
+1. A computer running macOS or Linux (Linux haven't been test)
 2. A usbliter8 compatible devices (A12, A13)
 - Note that A12X/Z is not implemented due to lack of offsets, and S4/S5 will likely not be implemented due to tooling reasons and lack of demand.
 - Note that A14+ is extremely unlikely to come in the future.
@@ -20,10 +22,11 @@ Do *not* ask for an ETA for new features or version support
 4. An rp2350-based development board, I recommend the Waveshare RP2350A USB Mini
 
 # Usage
-0. Get the key json file: Head to https://theapplewiki.com/wiki/Firmware and head to your iOS version page for your device type (iPhone or iPad), then head to the specific device section (i.e. iPhone XR or iPad Air (3rd generation)), and then find your iOS version you want to make a ramdisk of, then click on the "iDeviceX,X" page, then download the keys json.
+0. Get the key json file: Head to https://theapplewiki.com/wiki/Firmware and head to your iOS version page for your device type (iPhone or iPad), then head to the specific device section (i.e. iPhone XR or iPad Air (3rd generation)), and then find your iOS version you want to make a ramdisk of, then click on the "iDeviceX,X" page, then download the keys json.(x86_64 use gfk)
 1. run `https://github.com/Orangera1n/spironolactone.git` and `cd spironolactone`
 2. To make a ramdisk, run ./makerd.sh (iOS version here) (location of firmware key json here)
 4. To boot a ramdisk, run the command that ./makerd.sh outputs at the end
+5. To connect SSH,run ./spiro.sh ssh
 # Credits
 - [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice) for libirecovery and other tools
 - [Nathan](https://github.com/verygenericname) for [sshtars](https://github.com/verygenericname/sshtars/) and [SSHRD_Script](https://github.com/verygenericname/), which is going to be helpful for understanding how this works

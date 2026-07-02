@@ -1,3 +1,7 @@
 bootchain/*
 work/*
 fwkeys.json
+.venv/
+.DS_Store
+.DS_Store?
+commit.sh
