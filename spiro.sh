@@ -155,7 +155,7 @@ elif [ "$option" = update ]; then
             git fetch origin
             git reset --hard origin/main
             if [[ $(git rev-parse --short HEAD) == $latest ]]; then
-                log Update successfully,run ./sshrd32.sh again
+                log Update successfully,run ./spiro.sh again
             else
                 error Update failed,please check internet connection
                 exit

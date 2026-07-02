@@ -199,7 +199,7 @@ if [[ $(uname -m) == "arm64" ]]; then
     key=${key:2}
     ivkey=$iv$key
 else
-    ivkey=$("$oscheck"/gfk ibss $deviceid $buildid $version)
+    ivkey=$("$oscheck"/gfk ibec $deviceid $buildid $version)
     iv=${ivkey:0:32}
     key=${ivkey:32} 
     echo $ivkey
