@@ -55,7 +55,7 @@ cd work
 if [[ $(uname) == "Darwin" ]]; then
     plutil=/usr/bin/plutil
 else
-    plutil="$oscheck"/plutil
+    plutil=../"$oscheck"/plutil
 fi
 
 if [[ "$option1" == http* ]]; then
@@ -101,6 +101,13 @@ fi
 ../"$oscheck"/pzb -g Firmware/"$($plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache "$ipswurl"
 ../"$oscheck"/pzb -g "$(awk "/""${replace}""/{x=1}x&&/kernelcache.release/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswurl"
 cd ..
+
+if [[ $(uname) == "Darwin" ]]; then
+    plutil=/usr/bin/plutil
+else
+    plutil="$oscheck"/plutil
+fi
+
 if [[ $(uname -m) == "arm64" ]]; then
     iv=$(cat $fwkeyjson | "$oscheck"/jq -r 'first(.. | objects | select(has("iv")) | .iv)' | tr -d '"[]\n')
     key=$(cat $fwkeyjson | "$oscheck"/jq -r 'first(.. | objects | select(has("key")) | .key)' | tr -d '"[]\n')
