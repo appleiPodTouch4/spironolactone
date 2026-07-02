@@ -11,7 +11,8 @@ fi
 oscheck=$(uname)/$(uname -m)
 BUILD=Spironolactone-10.1
 BRANCH=$(git branch --show-current)
-echo "Welcome to Spironolactone v0.1.1 (Build: "$BUILD-$BRANCH")!"
+chmod +x "$oscheck"/*
+echo "Welcome to Spironolactone v0.1.2 (Build: "$BUILD-$BRANCH")!"
 echo "Fix by appleipodtouch4"
 #export keypagename="$2"
 #export keypage="https://theapplewiki.com/api.php?action=parse&formatversion=2&page="$keypagename"&prop=wikitext&format=json"
