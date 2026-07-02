@@ -62,8 +62,8 @@ if [[ "$option1" == http* ]]; then
     version=$($plutil -extract "ProductVersion" xml1 -o - "BuildManifest.plist" | sed -n 's/<string>\(.*\)<\/string>/\1/p')
     buildid=$($plutil -extract "ProductBuildVersion" xml1 -o - "BuildManifest.plist" | sed -n 's/<string>\(.*\)<\/string>/\1/p')
 else
-    buildid=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | ../"$oscheck"/jq '.firmwares | .[] | select(.version=="'$1'")' | "$oscheck"/jq -s '.[0] | .buildid' --raw-output)
-    version=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | ../"$oscheck"/jq '.firmwares | .[] | select(.version=="'$1'")' | "$oscheck"/jq -s '.[0] | .version' --raw-output)
+    buildid=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | ../"$oscheck"/jq '.firmwares | .[] | select(.version=="'$1'")' | ../"$oscheck"/jq -s '.[0] | .buildid' --raw-output)
+    version=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | ../"$oscheck"/jq '.firmwares | .[] | select(.version=="'$1'")' | ../"$oscheck"/jq -s '.[0] | .version' --raw-output)
 fi
 
 filedir="$boardconfig-$version-$buildid"
