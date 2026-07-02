@@ -152,12 +152,11 @@ elif [ "$option" = update ]; then
                 error Please install git first
                 exit
             fi
-            git fetch origin
-            git reset --hard origin/main
+            git pull
             if [[ $(git rev-parse --short HEAD) == $latest ]]; then
-                log Update successfully,run ./spiro.sh again
+                log "Update successfully,run ./spiro.sh again"
             else
-                error Update failed,please check internet connection
+                error "Update failed,please check internet connection"
                 exit
             fi
         else
