@@ -135,8 +135,8 @@ elif [ "$option" = ssh ]; then
 elif [ "$option" = update ]; then
     log Checking update
     local_ver=$(git rev-parse --short HEAD)
-    commit_info=$(curl -s "https://api.github.com/repos/appleiPodTouch4/SSHRD_Script_32Bit/commits?per_page=1" | $jq -r '.[0]')
-    sha=$(echo "$commit_info" | $jq -r '.sha')
+    commit_info=$(curl -s "https://api.github.com/repos/appleiPodTouch4/SSHRD_Script_32Bit/commits?per_page=1" | "$oscheck"/jq -r '.[0]')
+    sha=$(echo "$commit_info" | "$oscheck"/jq -r '.sha')
     latest=${sha:0:7}
     if [[ -z $local_ver || -z $latest ]]; then
         error Unable get version message,please check internet connection
