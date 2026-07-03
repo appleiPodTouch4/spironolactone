@@ -62,7 +62,7 @@ ERR_HANDLER () {
 trap ERR_HANDLER EXIT
 
 print "Welcome to Spironolactone v0.1.2 (Build: "$BUILD-$BRANCH")!"
-print "Fix by appleipodtouch4"
+print "Modified by appleipodtouch4"
 print "Thanks Asahi Scarlett rse4"
 
 #export keypagename="$2"

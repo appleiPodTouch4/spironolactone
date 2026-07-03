@@ -39,7 +39,7 @@ pause() {
 }
 
 print "Welcome to Spironolactone v0.1.2 (Build: "$BUILD-$BRANCH")!"
-print "Fix by appleipodtouch4"
+print "Modified by appleipodtouch4"
 print "Thanks Asahi Scarlett rse4"
 
 if [ "$option" = boot ]; then
@@ -56,17 +56,32 @@ if [ "$option" = boot ]; then
     log "Active venv"
     source .venv/bin/activate
 
-    if [[ ! -f "/opt/homebrew/lib/libusb-1.0.dylib" ]] && [[ ! -f "/usr/local/lib/libusb-1.0.dylib" ]]; then
-        error "Install libusb first"
-        log "Using command 'brew install libusb' "
+    if [[ $(uname) == "Darwin" ]]; then
+        if [[ ! -f "/opt/homebrew/lib/libusb-1.0.dylib" ]] && [[ ! -f "/usr/local/lib/libusb-1.0.dylib" ]]; then
+            error "Install libusb first"
+            log "Using command 'brew install libusb' "
+            exit 1
+        fi
+    else
+        if [[ -z $(command -v libusb) ]]; then
+            error "Install libusb first"
+            log "Using command 'sudo apt install libusb' "
+            exit 1
+        fi
     fi
 
-    if [[ -z $(command -v pyimg4) ]]; then
-        python3 -m pip install pyusb
-        python3 -m pip install pyimg4
-        python3 -m pip install pyserial
-        python3 -m pip install capstone
-    fi
+    depends=("pyimg4" "pyserial" "pyusb" "capstone")
+    log "Check depends"
+    for pkg in "${depends[@]}"; do
+        if ! python3 -m pip show "$pkg" > /dev/null 2>&1; then
+            log "Installing $pkg"
+            python3 -m pip install "$pkg"
+            if ! python3 -m pip show "$pkg" > /dev/null 2>&1; then
+                error "Install $pkg failed, check your internet connection"
+                exit 1 
+            fi
+        fi
+    done
 
     if [ -n "$bootchain" ]; then
         sleep 3
@@ -127,6 +142,19 @@ elif [ "$option" = ssh ]; then
         sudo usbmuxd -pf > /dev/null 2>&1 &
         sleep .1
     fi
+    print "[*] For accessing device with FileZilla, note the following:"
+    print "    Host: sftp://127.0.0.1   User: root   Password: alpine   Port: 2222"
+    print "[*] Mount filesystems (make sure ramdisk version is correct):"
+    print "    /usr/bin/mount_filesystems(mount /mnt2 will cause SEP panic.)"
+    print "    mount_apfs /dev/disks1s1 /mnt1"
+    print "[*] Rename system snapshot:"
+    print '    /usr/bin/snaputil -n "$(/usr/bin/snaputil -l /mnt1)" orig-fs /mnt1'
+    print "[*] Erase device without updating:"
+    print "    /usr/sbin/nvram oblit-inprogress=5"
+    print "[*] Reboot:"
+    print "    /sbin/reboot"
+    print "[*] Remove Setup.app (up to 13.2.3 or 12.4.4; on 10.0+ the device must be erased afterwards, on 11.3+ also rename system snapshot):"
+    print "    rm -rf /mnt1/Applications/Setup.app"
     "$oscheck"/iproxy 2222 22 > /dev/null 2>&1 &
     "$oscheck"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost || true
     killall iproxy > /dev/null 2>&1 | true
