@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")"
 #export ipswurl="$1"
 if [[ $EUID != 0 ]]; then
     echo "Enter your user password"
@@ -12,6 +13,10 @@ oscheck=$(uname)/$(uname -m)
 BUILD=Spironolactone-10.1
 BRANCH=$(git branch --show-current)
 chmod +x "$oscheck"/*
+
+if [ ! -e resources/ssh.tar ] && [ "$(uname)" = 'Linux' ]; then
+    gzip -d -k resources/ssh.tar.gz
+fi
 
 TERM=xterm-256color
 color_R=$(tput setaf 9)
@@ -137,8 +142,7 @@ else
 fi
 
 filedir="$boardconfig-$version-$buildid"
-log $filedir
-pause
+
 if [[ -d ../bootchain/$filedir ]] && [[ -f ../"bootchain/$filedir/ANE.img4" && -f ../"bootchain/$filedir/AOP.img4" && -f ../"bootchain/$filedir/AVE.img4" && -f ../"bootchain/$filedir/devicetree.img4" && -f ../"bootchain/$filedir/GFX.img4" && -f ../"bootchain/$filedir/iBoot.patched.bin" && -f ../"bootchain/$filedir/ISP.img4" && -f ../"bootchain/$filedir/kernelcache.img4" && -f ../"bootchain/$filedir/ramdisk.img4" && -f ../"bootchain/$filedir/SIO.img4" && -f ../"bootchain/$filedir/trustcache.img4" ]]; then
     print "Ramdisk exist,use ./spiro.sh boot $filedir to boot ramdisk"
     exit
@@ -206,7 +210,7 @@ else
 fi
 
 if [[ -z $ivkey ]] || [[ $ivkey == "unable to find ivkey" ]]; then
-    error "Unable to get firmware key,you can define ivkey here"
+    error "Unable to get firmware key,you can define ibec ivkey here"
     log "You can go to https://theapplewiki.com/wiki/Firmware_Keys to find ivkey"
     log "Enter iv"
     read iv
@@ -258,7 +262,7 @@ else
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:AOP:Info:Path" | sed -E 's#^.*Firmware/##; s#^.*AOP/##; s/^"//; s/"$//')" -o bootchain/$filedir/AOP.img4 -M resources/IM4M_$cpid
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:ANE:Info:Path" | sed -E 's#^.*Firmware/##; s#^.*ane/##; s/^"//; s/"$//')" -o bootchain/$filedir/ANE.img4 -M resources/IM4M_$cpid
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:AVE:Info:Path" | sed -E 's#^.*Firmware/##; s#^.*ave/##; s/^"//; s/"$//')" -o bootchain/$filedir/AVE.img4 -M resources/IM4M_$cpid
-    "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:ISP:Info:Path" | sed -E 's#^.*Firmware/##; s#^.*isp_bni/##; s/^"//; s/"$//')" -o bootchain/$filedir/ISP.img4 -M resources/IM4M_$cpid
+    "$oscheck"/img4 -i "work/$( "$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:ISP:Info:Path" | sed -E 's/^"//; s/"$//' | xargs basename )" -o "bootchain/$filedir/ISP.img4" -M "resources/IM4M_$cpid"
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:GFX:Info:Path" | sed -E 's#^.*Firmware/##; s#^.*agx/##; s/^"//; s/"$//')" -o bootchain/$filedir/GFX.img4 -M resources/IM4M_$cpid
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:SIO:Info:Path" | sed -E 's#^.*Firmware/##; s/^"//; s/"$//')" -o bootchain/$filedir/SIO.img4 -M resources/IM4M_$cpid
 fi

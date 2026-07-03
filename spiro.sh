@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")"
 oscheck=$(uname)/$(uname -m)
 option=$1
 bootchain=$2
@@ -66,6 +67,7 @@ if [ "$option" = boot ]; then
         python3 -m pip install pyserial
         python3 -m pip install capstone
     fi
+
     if [ -n "$bootchain" ]; then
         sleep 3
         device_pwnd="$("$oscheck"/irecovery -q | grep "PWND" | cut -c 7-)"
@@ -133,17 +135,17 @@ elif [ "$option" = ssh ]; then
     fi
     exit
 elif [ "$option" = update ]; then
-    log Checking update
+    log "Checking update"
     local_ver=$(git rev-parse --short HEAD)
-    commit_info=$(curl -s "https://api.github.com/repos/appleiPodTouch4/SSHRD_Script_32Bit/commits?per_page=1" | "$oscheck"/jq -r '.[0]')
+    commit_info=$(curl -s "https://api.github.com/repos/appleiPodTouch4/spironolactone/commits?per_page=1" | "$oscheck"/jq -r '.[0]')
     sha=$(echo "$commit_info" | "$oscheck"/jq -r '.sha')
     latest=${sha:0:7}
     if [[ -z $local_ver || -z $latest ]]; then
-        error Unable get version message,please check internet connection
+        error "Unable get version message,please check internet connection"
         exit
     fi
     if [[ $local_ver == $latest ]]; then
-        log It is already the latest commit,no upgrade required
+        log "It is already the latest commit,no upgrade required"
     else
         log "Newest commit is $latest. Do you want to update?(enter yes or no)"
         read yesno
