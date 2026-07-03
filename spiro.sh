@@ -95,7 +95,10 @@ if [ "$option" = boot ]; then
         log "Loading iBoot!"
         python3 "$oscheck"/usbliter8ctl boot bootchain/"$bootchain"/iBoot.patched.bin
         sleep 4
-        #"$oscheck"/irecovery -f bootchain/"$bootchain"/logo.img4
+        if [[ -f bootchain/"$bootchain"/logo.img4 ]]; then
+            log "Loading logo!"
+            "$oscheck"/irecovery -f bootchain/"$bootchain"/logo.img4
+        fi
         "$oscheck"/irecovery -c "setpicture 0x1"
         log "Loading Devicetree!"
         "$oscheck"/irecovery -f bootchain/"$bootchain"/devicetree.img4

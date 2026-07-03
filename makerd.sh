@@ -266,6 +266,8 @@ else
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:GFX:Info:Path" | sed -E 's#^.*Firmware/##; s#^.*agx/##; s/^"//; s/"$//')" -o bootchain/$filedir/GFX.img4 -M resources/IM4M_$cpid
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:SIO:Info:Path" | sed -E 's#^.*Firmware/##; s/^"//; s/"$//')" -o bootchain/$filedir/SIO.img4 -M resources/IM4M_$cpid
 fi
+"$oscheck"/img4 -i resources/logo.raw -o bootchain/$filedir/logo.img4 -M resources/IM4M_$cpid -A -T rlgo
+
 touch bootchain/$filedir/.ramdisk
 
 
