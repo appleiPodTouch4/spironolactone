@@ -1,4 +1,0 @@
-capstone
-pyusb
-pyserial
-pyimg4

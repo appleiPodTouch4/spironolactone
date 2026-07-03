@@ -1,5 +1,6 @@
 bootchain/*
 work/*
+history_commits/*
 fwkeys.json
 .venv/
 .DS_Store
