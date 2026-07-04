@@ -48,13 +48,48 @@ if [ "$option" = boot ]; then
         exit 1
     fi
 
-    if [[ ! -d .venv ]]; then
-        log "Creat venv"
-        python3 -m venv .venv
+    if [[ ! -f resources/usbliter8.txt || ( $(cat resources/usbliter8.txt) != "usbliter8_boot" && $(cat resources/usbliter8.txt) != "usbliter8ctl" ) ]]; then
+        log "Select which program you want to boot"
+        print "1.usbliter8_boot(without depends)"
+        print "2.usbliter8ctl(dependencies need to be installed)"
+        log "Enter 1 or 2"
+        read onetwo
+        if [[ -f resources/usbliter8.txt ]]; then
+            rm resources/usbliter8.txt
+        fi
+        if [[ $onetwo == "1" ]]; then
+            echo  usbliter8_boot > resources/usbliter8.txt
+        elif [[ $onetwo == "2" ]]; then
+            echo  usbliter8ctl > resources/usbliter8.txt
+        else
+            error "Enter 1 or 2"
+        fi
     fi
 
-    log "Active venv"
-    source .venv/bin/activate
+    usbliter8=$(cat resources/usbliter8.txt)
+
+    if [[ $usbliter8 == "usbliter8ctl" ]]; then
+        if [[ ! -d .venv ]]; then
+            log "Creat venv"
+            python3 -m venv .venv
+        fi
+
+        log "Active venv"
+        source .venv/bin/activate
+
+        depends=("pyimg4" "pyserial" "pyusb" "capstone")
+        log "Check depends"
+        for pkg in "${depends[@]}"; do
+            if ! python3 -m pip show "$pkg" > /dev/null 2>&1; then
+                log "Installing $pkg"
+                python3 -m pip install "$pkg"
+                if ! python3 -m pip show "$pkg" > /dev/null 2>&1; then
+                    error "Install $pkg failed, check your internet connection"
+                    exit 1 
+                fi
+            fi
+        done
+    fi
 
     if [[ $(uname) == "Darwin" ]]; then
         if [[ ! -f "/opt/homebrew/lib/libusb-1.0.dylib" ]] && [[ ! -f "/usr/local/lib/libusb-1.0.dylib" ]]; then
@@ -70,19 +105,6 @@ if [ "$option" = boot ]; then
         fi
     fi
 
-    depends=("pyimg4" "pyserial" "pyusb" "capstone")
-    log "Check depends"
-    for pkg in "${depends[@]}"; do
-        if ! python3 -m pip show "$pkg" > /dev/null 2>&1; then
-            log "Installing $pkg"
-            python3 -m pip install "$pkg"
-            if ! python3 -m pip show "$pkg" > /dev/null 2>&1; then
-                error "Install $pkg failed, check your internet connection"
-                exit 1 
-            fi
-        fi
-    done
-
     if [ -n "$bootchain" ]; then
         sleep 3
         device_pwnd="$("$oscheck"/irecovery -q | grep "PWND" | cut -c 7-)"
@@ -93,7 +115,11 @@ if [ "$option" = boot ]; then
             log "[*] Pwned: "$device_pwnd""
         fi
         log "Loading iBoot!"
-        python3 "$oscheck"/usbliter8ctl boot bootchain/"$bootchain"/iBoot.patched.bin
+        if [[ $usbliter8 == "usbliter8ctl" ]]; then
+            python3 "$oscheck"/usbliter8ctl boot bootchain/"$bootchain"/iBoot.patched.bin
+        else
+            "$oscheck"/usbliter8_boot bootchain/"$bootchain"/iBoot.patched.bin
+        fi
         sleep 4
         if [[ -f bootchain/"$bootchain"/logo.img4 ]]; then
             log "Loading logo!"

@@ -44,6 +44,7 @@ Do *not* ask for an ETA for new features or version support
 - [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice) for libirecovery and other tools
 - [Nathan](https://github.com/verygenericname) for [sshtars](https://github.com/verygenericname/sshtars/) and [SSHRD_Script](https://github.com/verygenericname/), which is going to be helpful for understanding how this works
 - [Paradigm Shift](https://github.com/prdgmshift) for [usbliter8 Explot](https://github.com/prdgmshift/usbliter8) used in the tool
+- [AldazActivator](https://github.com/AldazActivator) for [usbliter8-c](https://github.com/AldazActivator/usbliter8-c) boot iboot without dependencies
 - [tihmstar](https://github.com/tihmstar) for pzb/original iBoot64Patcher, and img4tool
 - [xerub](https://github.com/xerub) for img4lib and restored_external in the ramdisk
 - [Cryptic](https://github.com/Cryptiiiic) for iBoot64Patcher fork
