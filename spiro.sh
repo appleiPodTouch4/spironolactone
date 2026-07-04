@@ -98,9 +98,9 @@ if [ "$option" = boot ]; then
             exit 1
         fi
     else
-        if [[ -z $(command -v libusb) ]]; then
+        if ! ldconfig -p | grep -q "libusb-1.0.so"; then
             error "Install libusb first"
-            log "Using command 'sudo apt install libusb' "
+            log "Using command 'sudo apt install libusb-1.0-0-dev' "
             exit 1
         fi
     fi
