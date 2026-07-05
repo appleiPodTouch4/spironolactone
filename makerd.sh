@@ -6,9 +6,11 @@ if [[ $EUID != 0 ]]; then
     sudo /bin/bash "$0" "$@"
     exit $?
 fi
+
 if [[ -d work ]]; then
     rm -r work
 fi
+
 oscheck=$(uname)/$(uname -m)
 BUILD=Spironolactone-10.1
 BRANCH=$(git branch --show-current)
@@ -118,6 +120,8 @@ else
     #buildid=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | ../"$oscheck"/jq '.firmwares | .[] | select(.version=="'$1'")' | ../"$oscheck"/jq -s '.[0] | .buildid' --raw-output)
     #version=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | ../"$oscheck"/jq '.firmwares | .[] | select(.version=="'$1'")' | ../"$oscheck"/jq -s '.[0] | .version' --raw-output)
     curl -s -L "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" -o tmp.json
+    if [[ ! -f tmp.json ]]; then
+        error "Unable to download json,check your internet connection"
     buildid=$(../"$oscheck"/jq -r --arg ver "$1" '.firmwares[] | select(.version == $ver) | .buildid' tmp.json | head -n 1)
     version=$(../"$oscheck"/jq -r --arg ver "$1" '.firmwares[] | select(.version == $ver) | .version' tmp.json | head -n 1)
 fi

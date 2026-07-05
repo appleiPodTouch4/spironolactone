@@ -103,6 +103,11 @@ if [ "$option" = boot ]; then
             log "Using command 'sudo apt install libusb-1.0-0-dev' "
             exit 1
         fi
+        if [[ -z $(command -v usbmuxd) ]]; then
+            error "Install usbmuxd first"
+            log "Using command 'sudo apt install usbmuxd' "
+            exit 1
+        fi
     fi
 
     if [ -n "$bootchain" ]; then
@@ -112,7 +117,7 @@ if [ "$option" = boot ]; then
             error "Please use RP2350 to enter pwnDFU mode first!"
             exit
         else
-            log "[*] Pwned: "$device_pwnd""
+            log "Pwned: "$device_pwnd""
         fi
         log "Loading iBoot!"
         if [[ $usbliter8 == "usbliter8ctl" ]]; then
@@ -171,18 +176,18 @@ elif [ "$option" = ssh ]; then
         sudo usbmuxd -pf > /dev/null 2>&1 &
         sleep .1
     fi
-    print "[*] For accessing device with FileZilla, note the following:"
+    print "For accessing device with FileZilla, note the following:"
     print "    Host: sftp://127.0.0.1   User: root   Password: alpine   Port: 2222"
-    print "[*] Mount filesystems (make sure ramdisk version is correct):"
+    print "Mount filesystems (make sure ramdisk version is correct):"
     print "    /usr/bin/mount_filesystems(mount /mnt2 will cause SEP panic.)"
-    print "    mount_apfs /dev/disks1s1 /mnt1"
-    print "[*] Rename system snapshot:"
+    print "    mount_apfs /dev/disk0s1s1 /mnt1"
+    print "Rename system snapshot:"
     print '    /usr/bin/snaputil -n "$(/usr/bin/snaputil -l /mnt1)" orig-fs /mnt1'
-    print "[*] Erase device without updating:"
+    print "Erase device without updating:"
     print "    /usr/sbin/nvram oblit-inprogress=5"
-    print "[*] Reboot:"
+    print "Reboot:"
     print "    /sbin/reboot"
-    print "[*] Remove Setup.app (up to 13.2.3 or 12.4.4; on 10.0+ the device must be erased afterwards, on 11.3+ also rename system snapshot):"
+    print "Remove Setup.app (up to 13.2.3 or 12.4.4; on 10.0+ the device must be erased afterwards, on 11.3+ also rename system snapshot):"
     print "    rm -rf /mnt1/Applications/Setup.app"
     "$oscheck"/iproxy 2222 22 > /dev/null 2>&1 &
     "$oscheck"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost || true
@@ -190,6 +195,22 @@ elif [ "$option" = ssh ]; then
     if [ "$(uname)" = 'Linux' ]; then
         sudo killall usbmuxd > /dev/null 2>&1 | true
     fi
+    exit
+elif [ "$option" = reboot ]; then
+    if [ "$(uname)" = 'Linux' ]; then
+        sudo systemctl stop usbmuxd > /dev/null 2>&1 | true
+        sudo killall usbmuxd > /dev/null 2>&1 | true
+        sleep .1
+        sudo usbmuxd -pf > /dev/null 2>&1 &
+        sleep .1
+    fi
+    "$ocheck"/iproxy 2222 22 > /dev/null 2>&1 &
+    "$oscheck"/sshpass -p 'alpine' ssh -o StrictHostKeyChecking=no -p2222 root@localhost "/sbin/reboot"
+    killall iproxy > /dev/null 2>&1 | true
+    if [ "$(uname)" = 'Linux' ]; then
+        sudo killall usbmuxd > /dev/null 2>&1 | true
+    fi
+    log "Device should now reboot"
     exit
 elif [ "$option" = update ]; then
     log "Checking update"

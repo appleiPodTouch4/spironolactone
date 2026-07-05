@@ -35,6 +35,7 @@ Do *not* ask for an ETA for new features or version support
 4. To boot a ramdisk, run ./spiro.sh boot (bootchain name)
 5. To connect SSH,run ./spiro.sh ssh
 6. To update the script,run ./spiro.sh update
+6. To reboot device,run ./spiro.sh reboot
 
 # Issues
 1. Some linux distro is unsupport(iBoot64Patcher might crash)
