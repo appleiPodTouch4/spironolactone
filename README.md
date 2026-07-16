@@ -31,7 +31,7 @@ Do *not* ask for an ETA for new features or version support
 # Usage
 1. Clone this repository: git clone https://github.com/appleiPodTouch4/spironolactone.git --recursive
 2. cd spironolactone
-3. To make a ramdisk, run ./makerd.sh (iOS version here)
+3. To make a ramdisk, run ./makerd.sh (iOS version here)/(IPSW url here) + (ramdisk/dualboot/downgrade)
 4. To boot a ramdisk, run ./spiro.sh boot (bootchain name)
 5. To connect SSH,run ./spiro.sh ssh
 6. To update the script,run ./spiro.sh update
@@ -39,13 +39,14 @@ Do *not* ask for an ETA for new features or version support
 
 # Issues
 1. Some linux distro is unsupport(iBoot64Patcher might crash)
-2. Arm64 macOS cannot use gfk(It is not possible to compile on Macs without arm64.)
+2. Linux version does not currently support dual-booting(without devicetree_parse and devicetree_repack),waiting for update.
 
 # Credits
 - [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice) for libirecovery and other tools
+- [Duy Tran](https://github.com/AldazActivator) for devicetree-parse
 - [Nathan](https://github.com/verygenericname) for [sshtars](https://github.com/verygenericname/sshtars/) and [SSHRD_Script](https://github.com/verygenericname/), which is going to be helpful for understanding how this works
 - [Paradigm Shift](https://github.com/prdgmshift) for [usbliter8 Explot](https://github.com/prdgmshift/usbliter8) used in the tool
-- [AldazActivator](https://github.com/AldazActivator) for [usbliter8-c](https://github.com/AldazActivator/usbliter8-c) boot iboot without dependencies
+- [AldazActivation](https://github.com/AldazActivator) (apologises again for using something from an icloud bypass dev, but it does work and isn't malicous) for usbliter8_boot
 - [tihmstar](https://github.com/tihmstar) for pzb/original iBoot64Patcher, and img4tool
 - [xerub](https://github.com/xerub) for img4lib and restored_external in the ramdisk
 - [Cryptic](https://github.com/Cryptiiiic) for iBoot64Patcher fork

@@ -12,8 +12,9 @@ if [[ -d work ]]; then
 fi
 
 oscheck=$(uname)/$(uname -m)
-BUILD=Spironolactone-10.1
 BRANCH=$(git branch --show-current)
+BUILD=$(grep "BUILD" verinfo | cut -d':' -f2)
+VERSION=$(grep "VERSION" verinfo | cut -d':' -f2)
 chmod +x "$oscheck"/*
 
 if [ ! -e resources/ssh.tar ] && [ "$(uname)" = 'Linux' ]; then
@@ -63,7 +64,7 @@ ERR_HANDLER () {
 
 trap ERR_HANDLER EXIT
 
-print "Welcome to Spironolactone v0.1.2 (Build: "$BUILD-$BRANCH")!"
+print "Welcome to Spironolactone v"$VERSION" (Build: "$BUILD-$BRANCH")!"
 print "Modified by appleipodtouch4"
 print "Thanks Asahi Scarlett rse4"
 
@@ -73,37 +74,47 @@ print "Thanks Asahi Scarlett rse4"
 #curl -A "SpironolactoneKeyFetch" -s -o ./firmwarekeys.json "$keypage"
 export option1="$1"
 export option2="$2"
+
+boardconfig=$("$oscheck"/irecovery -q | grep MODEL | sed 's/MODEL: //')
+replace=$("$oscheck"/irecovery -q | grep MODEL | sed 's/MODEL: //')
+deviceid=$("$oscheck"/irecovery -q | grep PRODUCT | sed 's/PRODUCT: //')
 if [[ "$option1" == http* ]]; then
     ipswurl="$option1"
-    boardconfig=$("$oscheck"/irecovery -q | grep MODEL | sed 's/MODEL: //')
-    replace=$("$oscheck"/irecovery -q | grep MODEL | sed 's/MODEL: //')
-    deviceid=$("$oscheck"/irecovery -q | grep PRODUCT | sed 's/PRODUCT: //')
-
 elif [[ "$option1" =~ ^[0-9.]+$ ]]; then
-    boardconfig=$("$oscheck"/irecovery -q | grep MODEL | sed 's/MODEL: //')
-    replace=$("$oscheck"/irecovery -q | grep MODEL | sed 's/MODEL: //')
-    deviceid=$("$oscheck"/irecovery -q | grep PRODUCT | sed 's/PRODUCT: //')
     ipswurl=$(curl -sL "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" | "$oscheck"/jq '.firmwares | .[] | select(.version=="'$1'")' | "$oscheck"/jq -s '.[0] | .url' --raw-output)
+fi
+
+if [[ $option2 == "ramdisk" ]]; then
+    USEROPTION=ramdisk
+elif [[ $option2 == "dualboot" ]]; then
+    USEROPTION=dualboot
+elif [[ $option2 == "downgrade" ]]; then
+    USEROPTION=downgrade
 else
-    log "Use ./makerd.sh [iOS version] or ./makerd.sh [ipsw url]"
+    log "Use ./makerd.sh [iOS version] or ./makerd.sh [ipsw url] + [ramdisk/dualboot/downgrade]"
     exit
+fi
+
+if [[ $USEROPTION == "dualboot" ]] && [[ $(uname) == "Linux" ]]; then
+    error "The Linux version does not currently support dual-booting; please wait for an update"
+    exit 1
 fi
 
 cpid=$("$oscheck"/irecovery -q | grep CPID | sed 's/CPID: //')
 
 
-if [[ -z $ipswurl ]]; then
+if [[ -z $ipswurl ]] || [[ $ipswurl == "null" ]]; then
     error "Unable to get ipsw url"
-    exit
-fi
-fwkeyjson=$option2
-if [[ $(uname -m) == "arm64" ]] && [[ -z $fwkeyjson ]]; then
-    error "Please define the fwkey json"
     exit
 fi
 
 mkdir work
 cd work
+
+read -p "Do you want to define bootarg?
+If you don't want to define,press enter
+Type 'verbose', 'serial' or 'neither':" BOOTARGOPTION
+
 ../"$oscheck"/pzb -g BuildManifest.plist "$ipswurl"
 
 
@@ -122,6 +133,8 @@ else
     curl -s -L "https://api.ipsw.me/v4/device/$deviceid?type=ipsw" -o tmp.json
     if [[ ! -f tmp.json ]]; then
         error "Unable to download json,check your internet connection"
+        exit
+    fi
     buildid=$(../"$oscheck"/jq -r --arg ver "$1" '.firmwares[] | select(.version == $ver) | .buildid' tmp.json | head -n 1)
     version=$(../"$oscheck"/jq -r --arg ver "$1" '.firmwares[] | select(.version == $ver) | .version' tmp.json | head -n 1)
 fi
@@ -145,7 +158,18 @@ else
     exit 1
 fi
 
-filedir="$boardconfig-$version-$buildid"
+
+filedir="$boardconfig-$version-$buildid-$USEROPTION"
+
+if [[ "$USEROPTION" == ramdisk ]]; then
+   if [[ $cpid == 0x8020 ]]; then
+        IM4MPath="resources/IM4M_0x8020"
+    else
+        IM4MPath="resources/IM4M_0x8030"
+    fi
+else
+    read -p "Please drag or type a path to your IM4M/APTicket.der file: " IM4MPath
+fi
 
 if [[ -d ../bootchain/$filedir ]] && [[ -f ../"bootchain/$filedir/ANE.img4" && -f ../"bootchain/$filedir/AOP.img4" && -f ../"bootchain/$filedir/AVE.img4" && -f ../"bootchain/$filedir/devicetree.img4" && -f ../"bootchain/$filedir/GFX.img4" && -f ../"bootchain/$filedir/iBoot.patched.bin" && -f ../"bootchain/$filedir/ISP.img4" && -f ../"bootchain/$filedir/kernelcache.img4" && -f ../"bootchain/$filedir/ramdisk.img4" && -f ../"bootchain/$filedir/SIO.img4" && -f ../"bootchain/$filedir/trustcache.img4" ]]; then
     print "Ramdisk exist,use ./spiro.sh boot $filedir to boot ramdisk"
@@ -175,6 +199,7 @@ if [[ "$boardconfig" == n104ap ]]; then
 else
     ../"$oscheck"/pzb -g "$(awk "/""${replace}""/{x=1}x&&/iBEC[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswurl"
 fi
+
 ../"$oscheck"/pzb -g "$(awk "/""${replace}""/{x=1}x&&/DeviceTree[.]/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswurl"
 
 if [ "$(uname)" = 'Darwin' ]; then
@@ -200,18 +225,19 @@ fi
 ../"$oscheck"/pzb -g "$(awk "/""${replace}""/{x=1}x&&/kernelcache.release/{print;exit}" BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" "$ipswurl"
 cd ..
 
-if [[ $(uname -m) == "arm64" ]]; then
-    iv=$(cat $fwkeyjson | "$oscheck"/jq -r 'first(.. | objects | select(has("iv")) | .iv)' | tr -d '"[]\n')
-    key=$(cat $fwkeyjson | "$oscheck"/jq -r 'first(.. | objects | select(has("key")) | .key)' | tr -d '"[]\n')
-    iv=${iv:2}
-    key=${key:2}
-    ivkey=$iv$key
-else
+#remove json
+#if [[ $option2 == *json ]]; then
+#    iv=$(cat $fwkeyjson | "$oscheck"/jq -r 'first(.. | objects | select(has("iv")) | .iv)' | tr -d '"[]\n')
+#    key=$(cat $fwkeyjson | "$oscheck"/jq -r 'first(.. | objects | select(has("key")) | .key)' | tr -d '"[]\n')
+#    iv=${iv:2}
+#    key=${key:2}
+#    ivkey=$iv$key
+#else
     ivkey=$("$oscheck"/gfk ibec $deviceid $buildid $version)
     iv=${ivkey:0:32}
     key=${ivkey:32} 
     echo $ivkey
-fi
+#fi
 
 if [[ -z $ivkey ]] || [[ $ivkey == "unable to find ivkey" ]]; then
     error "Unable to get firmware key,you can define ibec ivkey here"
@@ -230,30 +256,79 @@ else
     "$oscheck"/img4 -i work/"$(awk "/""${replace}""/{x=1}x&&/iBEC[.]/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | sed 's/Firmware[/]dfu[/]//')" -o work/iBoot.bin  -k "$ivkey"
 fi
 "$oscheck"/iBoot64patcher_cryptic work/iBoot.bin work/iBoot.prepatched
-"$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "-v debug=0x2014e rd=md0 wdt=-1"
+#"$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "-v debug=0x2014e rd=md0 wdt=-1"
 
-if [ "$(uname)" = 'Darwin' ]; then
-    "$oscheck"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/ramdisk.dmg
-    hdiutil resize -size 210MB work/ramdisk.dmg
-    hdiutil attach -mountpoint /tmp/SpironolactoneRD work/ramdisk.dmg -owners off
-    "$oscheck"/gtar -x --no-overwrite-dir -f resources/ssh.tar.gz -C /tmp/SpironolactoneRD/
-    hdiutil detach -force /tmp/SpironolactoneRD
-    hdiutil resize -sectors min work/ramdisk.dmg
-    "$oscheck"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.bin
+if [[ "$USEROPTION" == ramdisk ]]; then
+    if [[ "$BOOTARGOPTION" == verbose ]]; then
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "-v debug=0x2014e rd=md0 wdt=-1"
+    elif [[ "$BOOTARGOPTION" == serial ]]; then
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "serial=3 debug=0x2014e rd=md0 wdt=-1"
+    else
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "rd=md0 wdt=-1"
+    fi
+elif [[ "$USEROPTION" == downgrade ]]; then
+    if [[ "$BOOTARGOPTION" == verbose ]]; then
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "-v debug=0x2014e wdt=-1"
+    elif [[ "$BOOTARGOPTION" == serial ]]; then
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "serial=3 debug=0x2014e wdt=-1"
+    else
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "wdt=-1"
+    fi
 else
-    "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/^"//; s/"$//')" -o work/ramdisk.dmg
-    "$oscheck"/hfsplus work/ramdisk.dmg grow 210000000 > /dev/null
-    "$oscheck"/hfsplus work/ramdisk.dmg untar resources/ssh.tar > /dev/null
-    "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/^"//; s/"$//')".trustcache -o work/trustcache.bin
+    read -p "What is the disk0s1s number of your second iOS partition, such as disk0s1s8:" dualbootdisk
+    if [[ "$BOOTARGOPTION" == verbose ]]; then
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "rd="$dualbootdisk" -v debug=0x2014e wdt=-1"
+    elif [[ "$BOOTARGOPTION" == serial ]]; then
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "rd="$dualbootdisk" serial=3 debug=0x2014e wdt=-1"
+    else
+        "$oscheck"/kairos work/iBoot.prepatched work/iBoot.patched -b "rd="$dualbootdisk" wdt=-1"
+    fi
+fi
+
+if [[ $USEROPTION == "ramdisk" ]]; then
+    if [ "$(uname)" = 'Darwin' ]; then
+        "$oscheck"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)" -o work/ramdisk.dmg
+        hdiutil resize -size 210MB work/ramdisk.dmg
+        hdiutil attach -mountpoint /tmp/SpironolactoneRD work/ramdisk.dmg -owners off
+        "$oscheck"/gtar -x --no-overwrite-dir -f resources/ssh.tar.gz -C /tmp/SpironolactoneRD/
+        hdiutil detach -force /tmp/SpironolactoneRD
+        hdiutil resize -sectors min work/ramdisk.dmg
+        "$oscheck"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."RestoreRamDisk"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o work/trustcache.bin
+    else
+        "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/^"//; s/"$//')" -o work/ramdisk.dmg
+        "$oscheck"/hfsplus work/ramdisk.dmg grow 210000000 > /dev/null
+        "$oscheck"/hfsplus work/ramdisk.dmg untar resources/ssh.tar > /dev/null
+        "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:RestoreRamDisk:Info:Path" | sed 's/^"//; s/"$//')".trustcache -o work/trustcache.bin
+    fi
 fi
 
 mkdir work/sshtar
 $oscheck/gtar -x --no-overwrite-dir -f resources/ssh.tar.gz -C work/sshtar
 $oscheck/trustcache append work/trustcache.bin $(cat resources/sshtarlist.txt)
-mkdir -p bootchain/$boardconfig-$version-$buildid
-$oscheck/img4 -i work/DeviceTree.$boardconfig.im4p -o bootchain/$filedir/devicetree.img4 -T rdtr -M resources/IM4M_$cpid
-$oscheck/img4 -i work/trustcache.bin -o bootchain/$filedir/trustcache.img4 -A -T rtsc -M resources/IM4M_$cpid
-$oscheck/img4 -i work/ramdisk.dmg -o bootchain/$filedir/ramdisk.img4 -A -T rdsk -M resources/IM4M_$cpid
+mkdir -p bootchain/$filedir
+
+
+if [[ "$USEROPTION" == dualboot ]]; then
+    $oscheck/img4 -i work/DeviceTree.$boardconfig.im4p -o work/devicetree.bin
+    $oscheck/devicetree-parse work/devicetree.bin > work/devicetree.json
+    sed -i '' 's/{"name": "vol.fs_role", "length": 4, "flags": 0, "disp": 1, "value": 64 },/{"name": "vol.fs_role", "length": 4, "flags": 0, "disp": 1, "value": 0 },/g' work/devicetree.json
+    $oscheck/devicetree-repack work/devicetree.json work/devicetree.patched
+    $oscheck/img4 -i work/devicetree.patched -o bootchain/$filedir/devicetree.img4 -A -T rdtr -M "$IM4MPath"
+else
+    $oscheck/img4 -i work/DeviceTree.$boardconfig.im4p -o bootchain/$filedir/devicetree.img4 -T rdtr -M resources/IM4M_$cpid
+fi
+
+if [[ "$USEROPTION" == ramdisk ]]; then
+    $oscheck/img4 -i work/trustcache.bin -o bootchain/$filedir/trustcache.img4 -A -T rtsc -M resources/IM4M_$cpid
+    $oscheck/img4 -i work/ramdisk.dmg -o bootchain/$filedir/ramdisk.img4 -A -T rdsk -M resources/IM4M_$cpid
+else
+    if [[ $(uname) == "Darwin" ]]; then
+        $oscheck/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".0."Manifest"."OS"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1)".trustcache -o bootchain/$filedir/trustcache.img4 -T rtsc -M "$IM4MPath"
+    else
+        $oscheck/img4 -i work/"$("$oscheck"/PlistBuddy -c "Print :BuildIdentities:0:Manifest:OS:Info:Path" work/BuildManifest.plist)".trustcache -o bootchain/$filedir/trustcache.img4 -T rtsc -M "$IM4MPath"
+    fi
+fi
+
 $oscheck/img4 -i work/"$(awk "/""${replace}""/{x=1}x&&/kernelcache.release/{print;exit}" work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1)" bootchain/$filedir/kernelcache.img4 -T rkrn -M resources/IM4M_$cpid
 if [ "$(uname)" = 'Darwin' ]; then
     "$oscheck"/img4 -i work/"$(/usr/bin/plutil -extract "BuildIdentities".$bmindex."Manifest"."AOP"."Info"."Path" xml1 -o - work/BuildManifest.plist | grep '<string>' |cut -d\> -f2 |cut -d\< -f1 | head -1 |  cut -d'/' -f3-)" -o bootchain/$filedir/AOP.img4 -M resources/IM4M_$cpid
@@ -270,18 +345,29 @@ else
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:GFX:Info:Path" | sed -E 's#^.*Firmware/##; s#^.*agx/##; s/^"//; s/"$//')" -o bootchain/$filedir/GFX.img4 -M resources/IM4M_$cpid
     "$oscheck"/img4 -i work/"$("$oscheck"/PlistBuddy work/BuildManifest.plist -c "Print BuildIdentities:0:Manifest:SIO:Info:Path" | sed -E 's#^.*Firmware/##; s/^"//; s/"$//')" -o bootchain/$filedir/SIO.img4 -M resources/IM4M_$cpid
 fi
-"$oscheck"/img4 -i resources/logo.raw -o bootchain/$filedir/logo.img4 -M resources/IM4M_$cpid -A -T rlgo
+
+if [[ $USEROPTION == "ramdisk" ]]; then
+    "$oscheck"/img4 -i resources/logo.raw -o bootchain/$filedir/logo.img4 -M resources/IM4M_$cpid -A -T rlgo
+fi
 
 touch bootchain/$filedir/.ramdisk
 
-
 cp work/iBoot.patched bootchain/$filedir/iBoot.patched.bin
 
-if [[ -f "bootchain/$filedir/ANE.img4" && -f "bootchain/$filedir/AOP.img4" && -f "bootchain/$filedir/AVE.img4" && -f "bootchain/$filedir/devicetree.img4" && -f "bootchain/$filedir/GFX.img4" && -f "bootchain/$filedir/iBoot.patched.bin" && -f "bootchain/$filedir/ISP.img4" && -f "bootchain/$filedir/kernelcache.img4" && -f "bootchain/$filedir/ramdisk.img4" && -f "bootchain/$filedir/SIO.img4" && -f "bootchain/$filedir/trustcache.img4" ]]; then
-    print 'To boot, run ./spiro.sh boot '"$filedir"
-else
-    error "Some files cannot find,check logs"
-    rm -r bootchain/$filedir
+if [[ $USEROPTION == "dualboot" ]] || [[ $USEROPTION == "downgrade" ]]; then
+    if [[ -f "bootchain/$filedir/ANE.img4" && -f "bootchain/$filedir/AOP.img4" && -f "bootchain/$filedir/AVE.img4" && -f "bootchain/$filedir/devicetree.img4" && -f "bootchain/$filedir/GFX.img4" && -f "bootchain/$filedir/iBoot.patched.bin" && -f "bootchain/$filedir/ISP.img4" && -f "bootchain/$filedir/kernelcache.img4" &&  -f "bootchain/$filedir/SIO.img4" && -f "bootchain/$filedir/trustcache.img4" ]]; then
+        print 'To boot, run ./spiro.sh boot '"$filedir"
+    else
+        error "Some files cannot find,check logs"
+        rm -r bootchain/$filedir
+    fi
+elif [[ $USEROPTION == "ramdisk" ]]; then
+    if [[ -f "bootchain/$filedir/ANE.img4" && -f "bootchain/$filedir/AOP.img4" && -f "bootchain/$filedir/AVE.img4" && -f "bootchain/$filedir/devicetree.img4" && -f "bootchain/$filedir/GFX.img4" && -f "bootchain/$filedir/iBoot.patched.bin" && -f "bootchain/$filedir/ISP.img4" && -f "bootchain/$filedir/kernelcache.img4" && -f "bootchain/$filedir/ramdisk.img4" && -f "bootchain/$filedir/SIO.img4" && -f "bootchain/$filedir/trustcache.img4" ]]; then
+        print 'To boot, run ./spiro.sh boot '"$filedir"
+    else
+        error "Some files cannot find,check logs"
+        rm -r bootchain/$filedir
+    fi
 fi
 
 pause

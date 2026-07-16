@@ -3,7 +3,10 @@ cd "$(dirname "$0")"
 oscheck=$(uname)/$(uname -m)
 option=$1
 bootchain=$2
-BUILD=Spironolactone-10.1
+
+BUILD=$(grep "BUILD" verinfo | cut -d':' -f2)
+VERSION=$(grep "VERSION" verinfo | cut -d':' -f2)
+#Spironolactone-10.1
 BRANCH=$(git branch --show-current)
 
 TERM=xterm-256color
@@ -38,7 +41,7 @@ pause() {
     read -s
 }
 
-print "Welcome to Spironolactone v0.1.2 (Build: "$BUILD-$BRANCH")!"
+print "Welcome to Spironolactone v"$VERSION" (Build: "$BUILD-$BRANCH")!"
 print "Modified by appleipodtouch4"
 print "Thanks Asahi Scarlett rse4"
 
@@ -129,8 +132,8 @@ if [ "$option" = boot ]; then
         if [[ -f bootchain/"$bootchain"/logo.img4 ]]; then
             log "Loading logo!"
             "$oscheck"/irecovery -f bootchain/"$bootchain"/logo.img4
+            "$oscheck"/irecovery -c "setpicture 0x1"
         fi
-        "$oscheck"/irecovery -c "setpicture 0x1"
         log "Loading Devicetree!"
         "$oscheck"/irecovery -f bootchain/"$bootchain"/devicetree.img4
         "$oscheck"/irecovery -c "devicetree"
