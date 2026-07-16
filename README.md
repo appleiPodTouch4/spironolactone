@@ -1,5 +1,6 @@
 # Spironolactone
 # Origal repo https://github.com/Orangera1n/spironolactone
+## Downgrade and dualboot function hasn't been tested,if it has some error occured,submit issue
 This is a tool meant for booting dualboots, ssh ramdisks, and tether downgrades for now. Currently, it only supports generating ssh ramdisks and booting them.
 
 Expansion in functionality (i.e. installing dualboots, jailbreaks, downgrades, etc) willl come at a later date. 
